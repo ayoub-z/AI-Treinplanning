@@ -214,12 +214,14 @@ class QLearningAgent:
 
         for _, row in df.iterrows():
             station = row['station']
-            
-            # Zorg dat tijd altijd HH:MM formaat heeft
+            # Lees de tijd als HH:MM en zet om naar relatieve minuten sinds base_departure_minute.
             raw_time = str(row['time']).strip()
             time_obj = datetime.strptime(raw_time, "%H:%M" if len(raw_time) == 5 else "%H:%M:%S")
-            time_in_min = time_obj.hour * 60 + time_obj.minute
-            
+            abs_minutes = time_obj.hour * 60 + time_obj.minute
+            # Zet om naar relatieve minuten op basis van de omgeving zodat states overeenkomen
+            rel_minutes = abs_minutes - self.env.base_departure_minute
+            time_in_min = rel_minutes
+
             action = ast.literal_eval(row['action'])
             qv = float(row['q_value'])
 
@@ -254,11 +256,21 @@ class QLearningAgent:
                 print(f"Geen Q-waarde beschikbaar voor state {state}, planning stopt.")
                 break
 
-            # Kies actie met hoogste Q
-            best_action = max(self.q[state], key=self.q[state].get)
+            # Kies de beste actie. We bepalen welke acties daadwerkelijk beschikbaar zijn volgens de omgeving
+            state_actions = self.q[state]
+            try:
+                env_actions = self.env.possible_actions(state)
+            except Exception:
+                env_actions = list(state_actions.keys())
+
+            # Filter acties die niet in de omgeving kunnen worden uitgevoerd (zoals wachten wanneer verplaatsen kan)
+            valid_actions = [a for a in state_actions if a in env_actions]
+            if valid_actions:
+                best_action = max(valid_actions, key=lambda a: state_actions[a])
+            else:
+                best_action = max(state_actions, key=state_actions.get)
 
             prev_station = self.env.current
-            prev_time = self.env.time
 
             _, _, done = self.env.step(best_action)
             curr_station = self.env.current
