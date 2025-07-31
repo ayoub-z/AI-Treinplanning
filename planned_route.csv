@@ -1,0 +1,11 @@
+station,time,action,next_station
+Ah,14:00,wait,Ah
+Ah,14:02,depart,Ahp
+Ahp,14:04,depart,Va
+Va,14:05,depart,IJbww
+IJbww,14:07,depart,Wtv
+Wtv,14:09,depart,Dvn
+Dvn,14:13,depart,Zv
+Zv,14:17,depart,Zvbtwa
+Zvbtwa,14:18,depart,Zvo
+Zvo,14:19,depart,Zvg
